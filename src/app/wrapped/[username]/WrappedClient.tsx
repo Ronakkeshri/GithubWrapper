@@ -454,7 +454,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
               <div
                 ref={shareRef}
-                className="relative w-full max-w-[420px] aspect-[4/5] bg-[#050505] rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
+                className="relative w-full max-w-[420px] min-h-[760px] bg-[#050505] rounded-[2rem] p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
               >
                 <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/40 blur-[80px] rounded-full" />
                 <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/30 blur-[80px] rounded-full" />

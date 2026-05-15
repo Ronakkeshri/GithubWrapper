@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import Image from 'next/image';
 import { Download, Share2, Github, Star, GitFork, Code2, Trophy, Calendar, Zap, TrendingUp, Activity, Box, Clock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
@@ -51,19 +51,27 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
     setIsExporting(true);
 
     try {
-      const dataUrl = await toPng(shareRef.current, {
-        cacheBust: true,
-        pixelRatio: 3,
-        quality: 1,
+      const canvas = await html2canvas(shareRef.current, {
+        scale: 3,
         backgroundColor: "#050505",
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: shareRef.current.scrollWidth,
+        windowHeight: shareRef.current.scrollHeight,
       });
 
+      const image = canvas.toDataURL("image/png");
+
       const link = document.createElement("a");
+      link.href = image;
       link.download = `${user.login}-gitwrapped-${selectedYear}.png`;
-      link.href = dataUrl;
       link.click();
+
     } catch (err) {
-      console.error("Failed to export image", err);
+      console.error("Download failed:", err);
     } finally {
       setIsExporting(false);
     }

@@ -51,38 +51,19 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
     setIsExporting(true);
 
     try {
-      const node = shareRef.current;
-
-      const clone = node.cloneNode(true) as HTMLElement;
-
-      clone.style.width = `${node.scrollWidth}px`;
-      clone.style.height = `${node.scrollHeight}px`;
-      clone.style.position = 'fixed';
-      clone.style.top = '-9999px';
-      clone.style.left = '-9999px';
-      clone.style.overflow = 'visible';
-      clone.style.maxHeight = 'none';
-      clone.style.transform = 'none';
-
-      document.body.appendChild(clone);
-
-      const dataUrl = await toPng(clone, {
-        quality: 1,
-        pixelRatio: 3,
+      const dataUrl = await toPng(shareRef.current, {
         cacheBust: true,
-        width: clone.scrollWidth,
-        height: clone.scrollHeight
+        pixelRatio: 3,
+        quality: 1,
+        backgroundColor: "#050505",
       });
 
-      document.body.removeChild(clone);
-
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.download = `${user.login}-gitwrapped-${selectedYear}.png`;
       link.href = dataUrl;
       link.click();
-
     } catch (err) {
-      console.error('Failed to export image', err);
+      console.error("Failed to export image", err);
     } finally {
       setIsExporting(false);
     }
@@ -454,7 +435,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
               <div
                 ref={shareRef}
-                className="relative w-full max-w-[420px] min-h-[760px] bg-[#050505] rounded-[2rem] p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
+                className="relative w-[420px] min-h-[760px] bg-[#050505] rounded-[2rem] p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
               >
                 <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/40 blur-[80px] rounded-full" />
                 <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/30 blur-[80px] rounded-full" />

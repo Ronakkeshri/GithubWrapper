@@ -53,20 +53,28 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
     try {
       const node = shareRef.current;
 
-      const dataUrl = await toPng(node, {
+      const clone = node.cloneNode(true) as HTMLElement;
+
+      clone.style.width = `${node.scrollWidth}px`;
+      clone.style.height = `${node.scrollHeight}px`;
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.overflow = 'visible';
+      clone.style.maxHeight = 'none';
+      clone.style.transform = 'none';
+
+      document.body.appendChild(clone);
+
+      const dataUrl = await toPng(clone, {
         quality: 1,
         pixelRatio: 3,
         cacheBust: true,
-        width: node.scrollWidth,
-        height: node.scrollHeight,
-        style: {
-          width: `${node.scrollWidth}px`,
-          height: `${node.scrollHeight}px`,
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-          overflow: 'visible'
-        }
+        width: clone.scrollWidth,
+        height: clone.scrollHeight
       });
+
+      document.body.removeChild(clone);
 
       const link = document.createElement('a');
       link.download = `${user.login}-gitwrapped-${selectedYear}.png`;

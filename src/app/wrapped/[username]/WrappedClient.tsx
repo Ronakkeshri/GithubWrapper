@@ -47,18 +47,32 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
   const handleDownload = async () => {
     if (!shareRef.current) return;
+
     setIsExporting(true);
+
     try {
-      const dataUrl = await toPng(shareRef.current, { 
-        quality: 1, 
-        pixelRatio: 3, 
+      const node = shareRef.current;
+
+      const dataUrl = await toPng(node, {
+        quality: 1,
+        pixelRatio: 3,
         cacheBust: true,
-        style: { transform: 'scale(1)', transformOrigin: 'top left' }
+        width: node.scrollWidth,
+        height: node.scrollHeight,
+        style: {
+          width: `${node.scrollWidth}px`,
+          height: `${node.scrollHeight}px`,
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          overflow: 'visible'
+        }
       });
+
       const link = document.createElement('a');
       link.download = `${user.login}-gitwrapped-${selectedYear}.png`;
       link.href = dataUrl;
       link.click();
+
     } catch (err) {
       console.error('Failed to export image', err);
     } finally {
@@ -90,7 +104,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
   const totalCommitsCurrent = cCurrent ? cCurrent.totalContributions : analytics.eventsApproxCommits;
   const totalCommitsPrev = cPrev ? cPrev.totalContributions : 0;
-  
+
   const streakCurrent = cCurrent ? cCurrent.longestStreak : 0;
   const streakPrev = cPrev ? cPrev.longestStreak : 0;
 
@@ -133,8 +147,8 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
         {weeks.map((week, i) => (
           <div key={i} className="flex flex-col gap-1">
             {week.map((day: any, j: number) => (
-              <div 
-                key={j} 
+              <div
+                key={j}
                 className={`w-3 h-3 md:w-4 md:h-4 rounded-[2px] border ${getLevel(day.contributionCount)}`}
                 title={`${day.date}: ${day.contributionCount} contributions`}
               />
@@ -173,9 +187,8 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
               <button
                 key={year}
                 onClick={() => setSelectedYear(year)}
-                className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 ${
-                  selectedYear === year ? 'text-white' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 ${selectedYear === year ? 'text-white' : 'text-gray-400 hover:text-white'
+                  }`}
               >
                 {selectedYear === year && (
                   <motion.div
@@ -201,12 +214,12 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
             {/* SECTION 1 — HERO ANALYTICS DASHBOARD */}
             <section className="space-y-12">
               <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                <Image 
-                  src={user.avatar_url} 
-                  alt={user.login} 
-                  width={120} 
-                  height={120} 
-                  className="rounded-2xl border border-white/10 shadow-2xl" 
+                <Image
+                  src={user.avatar_url}
+                  alt={user.login}
+                  width={120}
+                  height={120}
+                  className="rounded-2xl border border-white/10 shadow-2xl"
                   unoptimized
                 />
                 <div className="space-y-2">
@@ -237,7 +250,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
                   <span className="text-gray-400 text-sm font-medium mb-2">Universal Rank</span>
                   <span className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">{analytics.universalRank}</span>
                 </div>
-                
+
                 <div className="glass p-6 rounded-2xl flex flex-col justify-center border border-white/5 hover:border-blue-500/30 transition-colors">
                   <span className="text-gray-400 text-sm font-medium mb-2">Power Level</span>
                   <span className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{analytics.powerLevel}</span>
@@ -282,7 +295,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
                   <Calendar className="w-8 h-8 text-purple-400" />
                   <h2 className="text-3xl md:text-4xl font-black">{parseInt(selectedYear) - 1} vs {selectedYear}</h2>
                 </div>
-                
+
                 <div className="glass-card p-6 md:p-10 rounded-3xl border border-white/10">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-white/10 gap-4 mb-4">
                     <div className="w-full md:w-1/3 text-sm text-gray-500 uppercase tracking-widest font-bold">Metric</div>
@@ -318,7 +331,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
                           <span className="text-blue-400">{lang.percent}%</span>
                         </div>
                         <div className="h-3 w-full bg-black/50 rounded-full overflow-hidden border border-white/5">
-                          <motion.div 
+                          <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${lang.percent}%` }}
                             viewport={{ once: true }}
@@ -413,7 +426,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
             {/* SECTION 5 — DEVELOPER PERSONA */}
             <section className="glass-card relative overflow-hidden rounded-[3rem] p-10 md:p-16 text-center border border-white/10 shadow-[0_0_50px_rgba(139,92,246,0.1)]">
               <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[100%] bg-gradient-to-br from-yellow-500/20 via-orange-500/10 to-red-500/5 blur-[100px] pointer-events-none" />
-              
+
               <Trophy className="w-20 h-20 md:w-24 md:h-24 mx-auto text-yellow-500 mb-8" />
               <h2 className="text-xl md:text-2xl font-bold text-gray-400 uppercase tracking-widest mb-4">Developer Persona</h2>
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 drop-shadow-2xl mb-8">
@@ -431,23 +444,23 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
                 <p className="text-gray-400">Download your GitWrapped {selectedYear} card and share it with the world.</p>
               </div>
 
-              <div 
+              <div
                 ref={shareRef}
                 className="relative w-full max-w-[420px] aspect-[4/5] bg-[#050505] rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
               >
                 <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/40 blur-[80px] rounded-full" />
                 <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/30 blur-[80px] rounded-full" />
-                
+
                 <div className="relative z-10 flex justify-between items-start">
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-1 truncate max-w-[200px]">{user.login}</h2>
                     <p className="text-purple-400 font-bold tracking-wide">GitWrapped {selectedYear}</p>
                   </div>
-                  <img 
-                    src={user.avatar_url} 
-                    alt="Avatar" 
-                    crossOrigin="anonymous" 
-                    className="w-16 h-16 rounded-full border-2 border-white/20 shadow-lg object-cover" 
+                  <img
+                    src={user.avatar_url}
+                    alt="Avatar"
+                    crossOrigin="anonymous"
+                    className="w-16 h-16 rounded-full border-2 border-white/20 shadow-lg object-cover"
                   />
                 </div>
 
@@ -458,7 +471,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
                       {analytics.persona}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md">
                       <div className="text-xs text-gray-400 mb-1">Contributions</div>

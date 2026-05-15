@@ -98,14 +98,12 @@ export default function Home() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter GitHub username"
-                    className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg py-3 focus:ring-0"
-                    required
+                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-white placeholder-gray-500 text-sm sm:text-lg py-3 focus:ring-0" required
                   />
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-white text-black px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
+                    className="shrink-0 bg-white text-black px-4 sm:px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"                  >
                     {isLoading ? 'Generating...' : 'Generate'}
                     {!isLoading && <ArrowRight className="w-4 h-4" />}
                   </button>

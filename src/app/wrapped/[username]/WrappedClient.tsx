@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import Image from 'next/image';
 import { Download, Share2, Github, Star, GitFork, Code2, Trophy, Calendar, Zap, TrendingUp, Activity, Box, Clock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
@@ -45,34 +45,59 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
   const analytics = analyticsMap[selectedYear];
 
+  /** Fetch an image URL and return it as a base64 data URL (CORS-safe) */
+  const fetchAsDataUrl = async (url: string): Promise<string | null> => {
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      const blob = await res.blob();
+      return await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  };
+
   const handleDownload = async () => {
     if (!shareRef.current) return;
-
     setIsExporting(true);
 
+    // Swap avatar src to a data URL so html-to-image can embed it without CORS issues
+    const avatarImg = shareRef.current.querySelector<HTMLImageElement>('img[alt="Avatar"]');
+    const originalSrc = avatarImg?.src ?? '';
+    if (avatarImg) {
+      const dataUrl = await fetchAsDataUrl(user.avatar_url);
+      if (dataUrl) avatarImg.src = dataUrl;
+    }
+
+    // One animation frame so the DOM is settled
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
     try {
-      const canvas = await html2canvas(shareRef.current, {
-        scale: 3,
-        backgroundColor: "#050505",
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: shareRef.current.scrollWidth,
-        windowHeight: shareRef.current.scrollHeight,
+      const dataUrl = await toPng(shareRef.current, {
+        cacheBust: true,
+        pixelRatio: 3,
+        backgroundColor: '#050505',
+        // Hide any element tagged data-export-hide (decorative blobs, etc.)
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.dataset.exportHide === 'true') {
+            return false;
+          }
+          return true;
+        },
       });
 
-      const image = canvas.toDataURL("image/png");
-
-      const link = document.createElement("a");
-      link.href = image;
+      const link = document.createElement('a');
+      link.href = dataUrl;
       link.download = `${user.login}-gitwrapped-${selectedYear}.png`;
       link.click();
-
     } catch (err) {
-      console.error("Download failed:", err);
+      console.error('Download failed:', err);
     } finally {
+      // Restore original avatar src
+      if (avatarImg) avatarImg.src = originalSrc;
       setIsExporting(false);
     }
   };
@@ -422,7 +447,7 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
             {/* SECTION 5 — DEVELOPER PERSONA */}
             <section className="glass-card relative overflow-hidden rounded-[3rem] p-10 md:p-16 text-center border border-white/10 shadow-[0_0_50px_rgba(139,92,246,0.1)]">
-              <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[100%] bg-gradient-to-br from-yellow-500/20 via-orange-500/10 to-red-500/5 blur-[100px] pointer-events-none" />
+              <div data-export-hide="true" className="absolute top-[-50%] left-[-20%] w-[100%] h-[100%] bg-gradient-to-br from-yellow-500/20 via-orange-500/10 to-red-500/5 blur-[100px] pointer-events-none" />
 
               <Trophy className="w-20 h-20 md:w-24 md:h-24 mx-auto text-yellow-500 mb-8" />
               <h2 className="text-xl md:text-2xl font-bold text-gray-400 uppercase tracking-widest mb-4">Developer Persona</h2>
@@ -443,50 +468,77 @@ export default function WrappedClient({ user, analyticsMap }: Props) {
 
               <div
                 ref={shareRef}
-                className="relative w-[420px] min-h-[760px] bg-[#050505] rounded-[2rem] p-8 flex flex-col justify-between border border-white/20 shadow-2xl"
+                className="relative w-[420px] min-h-[760px] bg-[#050505] rounded-[2rem] p-8 flex flex-col justify-between border border-white/20 shadow-2xl overflow-hidden"
               >
-                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/40 blur-[80px] rounded-full" />
-                <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/30 blur-[80px] rounded-full" />
+                {/* Decorative blobs — hidden during PNG export via filter */}
+                <div data-export-hide="true" className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/40 blur-[80px] rounded-full pointer-events-none" />
+                <div data-export-hide="true" className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/30 blur-[80px] rounded-full pointer-events-none" />
+                {/* Static blobs that DO render in the export (contained inside overflow-hidden) */}
+                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-purple-600/30 blur-[80px] rounded-full pointer-events-none" aria-hidden="true" />
+                <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-600/20 blur-[80px] rounded-full pointer-events-none" aria-hidden="true" />
 
                 <div className="relative z-10 flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-1 truncate max-w-[200px]">{user.login}</h2>
+                  <div className="flex-1 min-w-0 pr-4">
+                    <h2 className="text-2xl font-bold text-white mb-1 truncate">{user.login}</h2>
                     <p className="text-purple-400 font-bold tracking-wide">GitWrapped {selectedYear}</p>
                   </div>
                   <img
                     src={user.avatar_url}
                     alt="Avatar"
                     crossOrigin="anonymous"
-                    className="w-16 h-16 rounded-full border-2 border-white/20 shadow-lg object-cover"
+                    className="w-16 h-16 rounded-full border-2 border-white/20 shadow-lg object-cover flex-shrink-0"
                   />
                 </div>
 
                 <div className="relative z-10 flex-1 flex flex-col justify-center py-6 space-y-6">
                   <div className="space-y-1">
                     <div className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">Persona</div>
-                    <div className="text-4xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                    {/* Use a solid colour instead of bg-clip-text so html-to-image renders it correctly */}
+                    <div className="text-4xl font-black leading-tight text-white">
                       {analytics.persona}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                       <div className="text-xs text-gray-400 mb-1">Contributions</div>
                       <div className="text-xl font-bold text-white">{selectedYear === 'All Time' ? 'N/A' : totalCommitsCurrent}</div>
                     </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                       <div className="text-xs text-gray-400 mb-1">Universal Rank</div>
-                      <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">{analytics.universalRank}</div>
+                      {/* Solid amber so the rank text is never invisible in the PNG */}
+                      <div className="text-xl font-bold" style={{ color: '#f59e0b' }}>{analytics.universalRank}</div>
                     </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                       <div className="text-xs text-gray-400 mb-1">Top Language</div>
                       <div className="text-xl font-bold text-white truncate">{hasLanguages ? analytics.topLanguages[0].name : 'N/A'}</div>
                     </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                       <div className="text-xs text-gray-400 mb-1">Total Stars</div>
                       <div className="text-xl font-bold text-white">{analytics.totalStars}</div>
                     </div>
                   </div>
+
+                  {/* Universal Rank progress bar */}
+                  {(() => {
+                    const rankOrder = ['S+', 'S', 'A+', 'A', 'B+', 'B', 'C', 'D'];
+                    const rankIdx = rankOrder.indexOf(analytics.universalRank);
+                    const pct = rankIdx >= 0 ? Math.round(((rankOrder.length - 1 - rankIdx) / (rankOrder.length - 1)) * 100) : 50;
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Rank Progress</span>
+                          <span>{pct}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)' }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="relative z-10 flex justify-between items-center pt-5 border-t border-white/10">
